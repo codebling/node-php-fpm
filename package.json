@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/ivanslf/node-php-fpm#readme",
   "dependencies": {
+    "async-middleware": "^1.2.1",
     "fastcgi-client": "0.0.1"
   },
   "devDependencies": {

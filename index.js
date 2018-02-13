@@ -82,38 +82,38 @@ module.exports = function (userOptions = {}, customParams = {}) {
     }
 
     const php = fpm
-      php.request(headers, function (err, request) {
-        if (err) { return next(err) }
-        var output = ''
-        var errors = ''
+    php.request(headers, function (err, request) {
+      if (err) { return next(err) }
+      var output = ''
+      var errors = ''
 
-        req.pipe(request.stdin)
+      req.pipe(request.stdin)
 
-        request.stdout.on('data', function (data) {
-          output += data.toString('utf8')
-        })
-
-        request.stderr.on('data', function (data) {
-          errors += data.toString('utf8')
-        })
-
-        request.stdout.on('end', function () {
-          if (errors) { return next(new Error(errors)) }
-
-          const head = output.match(/^[\s\S]*?\r\n\r\n/)[0]
-          const parseHead = head.split('\r\n').filter(_ => _)
-          for (const item of parseHead) {
-            const pair = item.split(': ')
-            res.setHeader(pair[0], pair[1])
-            if (pair[0] === 'Status') {
-              res.statusCode = parseInt(pair[1].match(/\d+/)[0])
-            }
-          }
-          const body = output.slice(head.length)
-          res.write(body)
-          res.end()
-
-        })
+      request.stdout.on('data', function (data) {
+        output += data.toString('utf8')
       })
+
+      request.stderr.on('data', function (data) {
+        errors += data.toString('utf8')
+      })
+
+      request.stdout.on('end', function () {
+        if (errors) { return next(new Error(errors)) }
+
+        const head = output.match(/^[\s\S]*?\r\n\r\n/)[0]
+        const parseHead = head.split('\r\n').filter(_ => _)
+        for (const item of parseHead) {
+          const pair = item.split(': ')
+          res.setHeader(pair[0], pair[1])
+          if (pair[0] === 'Status') {
+            res.statusCode = parseInt(pair[1].match(/\d+/)[0])
+          }
+        }
+        const body = output.slice(head.length)
+        res.write(body)
+        res.end()
+
+      })
+    })
   }
 }

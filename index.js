@@ -1,6 +1,5 @@
 const path = require('path')
 const fastCgi = require('fastcgi-client')
-const wrap = require('async-middleware').wrap
 const defaultOptions = {
   host: '127.0.0.1',
   port: 9000,
@@ -87,7 +86,7 @@ module.exports = function (userOptions = {}, customParams = {}) {
     }
 
     const php = await fpm
-    return wrap(new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       php.request(headers, function (err, request) {
         if (err) { return reject(err) }
         var output = ''
@@ -122,6 +121,6 @@ module.exports = function (userOptions = {}, customParams = {}) {
           resolve({ headers, body })
         })
       })
-    }))
+    })
   }
 }

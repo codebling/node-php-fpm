@@ -1,6 +1,5 @@
 const path = require('path')
 const fastCgi = require('fastcgi-client')
-const wrap = require('async-middleware').wrap
 const defaultOptions = {
   host: '127.0.0.1',
   port: 9000,
@@ -10,13 +9,9 @@ const defaultOptions = {
 
 module.exports = function (userOptions = {}, customParams = {}) {
   const options = Object.assign({}, defaultOptions, userOptions)
-  const fpm = new Promise((resolve, reject) => {
-    const loader = fastCgi(options)
-    loader.on('ready', () => resolve(loader))
-    loader.on('error', reject)
-  })
+  const fpm = fastCgi(options)
 
-  return async function (req, res) {
+  return function (req, res, next) {
     let params = Object.assign({}, customParams, {
       uri: req.url
     })
@@ -86,10 +81,9 @@ module.exports = function (userOptions = {}, customParams = {}) {
       console.log(headers)
     }
 
-    const php = await fpm
-    return wrap(new Promise(function (resolve, reject) {
+    const php = fpm
       php.request(headers, function (err, request) {
-        if (err) { return reject(err) }
+        if (err) { return next(err) }
         var output = ''
         var errors = ''
 
@@ -104,7 +98,7 @@ module.exports = function (userOptions = {}, customParams = {}) {
         })
 
         request.stdout.on('end', function () {
-          if (errors) { return reject(new Error(errors)) }
+          if (errors) { return next(new Error(errors)) }
 
           const head = output.match(/^[\s\S]*?\r\n\r\n/)[0]
           const parseHead = head.split('\r\n').filter(_ => _)
@@ -119,9 +113,7 @@ module.exports = function (userOptions = {}, customParams = {}) {
           res.write(body)
           res.end()
 
-          resolve({ headers, body })
         })
       })
-    }))
   }
 }
